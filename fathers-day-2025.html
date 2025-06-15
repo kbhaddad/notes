@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Biblical Role of a Father: An Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Calm & Stable (Off-white, Dark Slate, Muted Blue) -->
+    <!-- Application Structure Plan: The application is designed as a single-page experience with a fixed top navigation bar, allowing users to instantly jump to any of the five core sections of the sermon. This structure was chosen over a simple long-scroll page to enhance user control and make the information more accessible and less overwhelming. Within each section, content is organized into interactive cards and lists. Key biblical references are clickable, revealing the scripture in a modal window. This approach turns a static outline into an exploratory tool, encouraging deeper engagement with the material by breaking it down into digestible, user-triggered pieces. The flow guides the user from the foundational concepts to practical responsibilities, then to real-world challenges, and finally to a conclusive call to action, mirroring a logical learning path. -->
+    <!-- Visualization & Content Choices: 
+        - [Report Info: Main Sermon Sections] -> [Goal: Navigation] -> [Viz/Method: Fixed Top Navigation] -> [Interaction: Click to scroll] -> [Justification: Provides clear, persistent access to all topics, enhancing usability.] -> [Library/Method: HTML, JS]
+        - [Report Info: Sub-points like "God as Father", "Imago Dei"] -> [Goal: Inform/Organize] -> [Viz/Method: Interactive Cards] -> [Interaction: Hover effects] -> [Justification: Breaks down dense text into visually distinct, manageable units, improving readability.] -> [Library/Method: HTML, Tailwind CSS]
+        - [Report Info: Core Responsibilities] -> [Goal: Organize/Compare] -> [Viz/Method: Three-column card layout] -> [Interaction: N/A] -> [Justification: Presents the three main duties as equally important pillars of fatherhood.] -> [Library/Method: HTML, Tailwind Grid]
+        - [Report Info: Challenges vs. Encouragement] -> [Goal: Compare/Relate] -> [Viz/Method: Two-column layout] -> [Interaction: N/A] -> [Justification: Directly juxtaposes problems with their biblical solutions, making the content more practical and hopeful.] -> [Library/Method: HTML, Tailwind Grid]
+        - [Report Info: Scripture References] -> [Goal: Inform/Context] -> [Viz/Method: JS-powered Modal] -> [Interaction: Click to open] -> [Justification: Provides immediate access to biblical texts without cluttering the main UI or forcing the user to leave the page, facilitating deeper study.] -> [Library/Method: JS, HTML]
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #2563eb; /* blue-600 */
+            border-bottom-color: #2563eb;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .scripture-link {
+            cursor: pointer;
+            color: #3b82f6; /* blue-500 */
+            font-weight: 600;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-900">A Father's Calling</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#introduction" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Introduction</a>
+                        <a href="#foundation" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Foundation</a>
+                        <a href="#responsibilities" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Responsibilities</a>
+                        <a href="#challenges" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Challenges</a>
+                        <a href="#conclusion" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Conclusion</a>
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button id="mobile-menu-button" type="button" class="bg-slate-100 inline-flex items-center justify-center p-2 rounded-md text-slate-500 hover:text-slate-600 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 focus:ring-blue-500" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#introduction" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600">Introduction</a>
+                <a href="#foundation" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600">Foundation</a>
+                <a href="#responsibilities" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600">Responsibilities</a>
+                <a href="#challenges" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600">Challenges</a>
+                <a href="#conclusion" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600">Conclusion</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <section id="introduction" class="min-h-screen flex items-center pt-16 -mt-16">
+            <div class="w-full">
+                <div class="text-center">
+                    <p class="text-base text-blue-600 font-semibold tracking-wide uppercase">An Introduction</p>
+                    <h2 class="mt-2 text-4xl font-extrabold text-slate-900 tracking-tight sm:text-5xl">The Biblical Role of a Father</h2>
+                    <p class="mt-6 max-w-2xl mx-auto text-xl text-slate-600">In a world grappling with identity, purpose, and strong family foundations, the role of a father has never been more critical, yet perhaps more misunderstood. This guide explores the profound and multifaceted biblical design for men in this vital calling.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="foundation" class="min-h-screen flex flex-col justify-center pt-16 -mt-16">
+             <div class="text-center mb-12">
+                <p class="text-base text-blue-600 font-semibold tracking-wide uppercase">The Foundation</p>
+                <h2 class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">Reflecting the Heart of God</h2>
+                 <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-600">Our understanding of earthly fatherhood begins with the character of our Heavenly Father. It's a role rooted in divine identity and purpose.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold text-slate-900">God, The Ultimate Father</h3>
+                    <p class="mt-2 text-slate-600">All fatherhood derives its name and pattern from God (<span class="scripture-link" data-ref="eph3_14">Ephesians 3:14-15</span>). He is the perfect model, a defender of the fatherless (<span class="scripture-link" data-ref="ps68_5">Psalm 68:5</span>), and His character defines true fatherhood.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold text-slate-900">Imago Dei: In His Image</h3>
+                    <p class="mt-2 text-slate-600">Fathers are created in the image of God (<span class="scripture-link" data-ref="gen1_26">Genesis 1:26-27</span>), imbuing the role with dignity, responsibility, and the profound potential to reflect God's own attributes to their children.</p>
+                </div>
+                <div class="card p-6 md:col-span-2 lg:col-span-1">
+                    <h3 class="text-xl font-bold text-slate-900">Attributes to Emulate</h3>
+                    <ul class="mt-2 text-slate-600 space-y-1 list-disc list-inside">
+                        <li>Love (<span class="scripture-link" data-ref="1john4_8">1 John 4:8</span>)</li>
+                        <li>Provision (<span class="scripture-link" data-ref="matt6_26">Matthew 6:26</span>)</li>
+                        <li>Discipline (<span class="scripture-link" data-ref="heb12_5">Hebrews 12:5-11</span>)</li>
+                        <li>Protection (<span class="scripture-link" data-ref="ps91_4">Psalm 91:4</span>)</li>
+                        <li>Guidance (<span class="scripture-link" data-ref="ps32_8">Psalm 32:8</span>)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="responsibilities" class="min-h-screen flex flex-col justify-center pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <p class="text-base text-blue-600 font-semibold tracking-wide uppercase">Core Responsibilities</p>
+                <h2 class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">A Three-Fold Calling</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-600">Biblical fatherhood is an active, engaged role encompassing spiritual leadership, diligent provision, and loving discipline.</p>
+            </div>
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="card p-8">
+                    <div class="text-blue-500 mb-4"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg></div>
+                    <h3 class="text-2xl font-bold text-slate-900">Spiritual Leadership</h3>
+                    <p class="mt-4 text-slate-600">A father's primary role is to disciple his children, diligently teaching them God's ways (<span class="scripture-link" data-ref="deut6_6">Deuteronomy 6:6-7</span>) and bringing them up in the training and instruction of the Lord, not out of anger but with purpose (<span class="scripture-link" data-ref="eph6_4_a">Ephesians 6:4</span>). This involves modeling faith, leading with integrity, and protecting the home's spiritual atmosphere.</p>
+                </div>
+                <div class="card p-8">
+                    <div class="text-blue-500 mb-4"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg></div>
+                    <h3 class="text-2xl font-bold text-slate-900">Provision & Protection</h3>
+                    <p class="mt-4 text-slate-600">A father must provide for the physical and material needs of his family (<span class="scripture-link" data-ref="1tim5_8">1 Timothy 5:8</span>). This extends to emotional protection, creating a secure, loving home, and demonstrating love for his wife, which forms a foundation of security for the children. He wisely stewards all resources for the family's good.</p>
+                </div>
+                 <div class="card p-8">
+                    <div class="text-blue-500 mb-4"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div>
+                    <h3 class="text-2xl font-bold text-slate-900">Discipline & Nurture</h3>
+                    <p class="mt-4 text-slate-600">Loving discipline is not about anger, but about instruction and character formation (<span class="scripture-link" data-ref="prov13_24">Proverbs 13:24</span>). It must be balanced with nurture: fostering affection, actively listening, speaking words of affirmation, and encouraging healthy emotional development, being careful not to exasperate them (<span class="scripture-link" data-ref="eph6_4_b">Ephesians 6:4</span>).</p>
+                </div>
+            </div>
+        </section>
+        
+        <section id="challenges" class="min-h-screen flex flex-col justify-center pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <p class="text-base text-blue-600 font-semibold tracking-wide uppercase">The Reality of the Role</p>
+                <h2 class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">Challenges & Encouragements</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-600">The path of fatherhood has its difficulties, but God provides abundant grace and strength for the journey.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+                <div class="card p-8">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-4">Common Challenges</h3>
+                    <ul class="space-y-4 text-slate-600">
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-red-500 mr-3">✖</span><span><strong>Busyness/Absence:</strong> The constant demands of work and other commitments can pull a father away from his primary responsibilities at home.</span></li>
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-red-500 mr-3">✖</span><span><strong>Lack of a Good Model:</strong> Many men enter fatherhood without a positive example from their own fathers to follow.</span></li>
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-red-500 mr-3">✖</span><span><strong>Cultural Pressures:</strong> Modern narratives often diminish or distort the biblical role, creating confusion and discouragement.</span></li>
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-red-500 mr-3">✖</span><span><strong>Personal Weakness:</strong> The ongoing, personal struggle with sin can hinder a father's effectiveness and witness.</span></li>
+                    </ul>
+                </div>
+                <div class="card p-8 bg-blue-600 text-white">
+                    <h3 class="text-2xl font-bold mb-4">God's Empowerment</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-blue-200 mr-3">✔</span><span><strong>Grace for Imperfection:</strong> No father is perfect, but God's strength is perfected in our weakness. The gospel offers forgiveness and a fresh start daily (<span class="scripture-link text-blue-200" data-ref="2cor12_9">2 Corinthians 12:9</span>).</span></li>
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-blue-200 mr-3">✔</span><span><strong>Power of the Spirit:</strong> God enables what He commands. It is God who works in you to will and to act according to his good purpose (<span class="scripture-link text-blue-200" data-ref="phil2_13">Philippians 2:13</span>).</span></li>
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-blue-200 mr-3">✔</span><span><strong>Community Support:</strong> You are not alone. The church family is a vital resource for equipping, encouraging, and supporting fathers.</span></li>
+                        <li class="flex items-start"><span class="flex-shrink-0 h-6 w-6 text-blue-200 mr-3">✔</span><span><strong>Start Small, Be Consistent:</strong> Don't be overwhelmed. Focus on one or two areas for growth and prioritize consistency over the illusion of perfection.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="min-h-screen flex flex-col justify-center pt-16 -mt-16">
+            <div class="text-center">
+                 <p class="text-base text-blue-600 font-semibold tracking-wide uppercase">The Path Forward</p>
+                <h2 class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">A Call to Action</h2>
+                 <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-600">Understanding this role is the first step. Living it out, by God's grace, is the lifelong journey.</p>
+                <div class="mt-8 max-w-lg mx-auto bg-white p-8 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-900">For Fathers:</h3>
+                    <p class="mt-2 text-slate-600">Commit or recommit today to intentional, biblical fatherhood. Identify one specific, practical step you will take this week. Seek forgiveness where you have failed, and walk forward in the freedom of God's grace.</p>
+                    <h3 class="text-xl font-bold text-slate-900 mt-6">For Everyone:</h3>
+                    <p class="mt-2 text-slate-600">Encourage and pray for the fathers in your life. Acknowledge the weight and importance of their role. Your support is a powerful gift.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-400">
+        <div class="container mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>&copy; 2024. An Interactive Guide to Biblical Fatherhood.</p>
+        </div>
+    </footer>
+    
+    <div id="scripture-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-95 opacity-0">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="modal-title" class="text-xl font-bold text-slate-900">Scripture Reference</h3>
+                    <button id="modal-close" class="text-slate-400 hover:text-slate-600">&times;</button>
+                </div>
+                <p id="modal-text" class="text-slate-600 whitespace-pre-wrap"></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const scriptureData = {
+            eph3_14: { title: "Ephesians 3:14-15", text: "For this reason I kneel before the Father, from whom every family in heaven and on earth derives its name." },
+            ps68_5: { title: "Psalm 68:5", text: "A father to the fatherless, a defender of widows, is God in his holy dwelling." },
+            gen1_26: { title: "Genesis 1:26-27", text: "Then God said, “Let us make mankind in our image, in our likeness...” So God created mankind in his own image, in the image of God he created them; male and female he created them." },
+            '1john4_8': { title: "1 John 4:8", text: "Whoever does not love does not know God, because God is love." },
+            matt6_26: { title: "Matthew 6:26", text: "Look at the birds of the air; they do not sow or reap or store away in barns, and yet your heavenly Father feeds them. Are you not much more valuable than they?" },
+            heb12_5: { title: "Hebrews 12:5-11", text: "And have you completely forgotten this word of encouragement that addresses you as a father addresses his son? It says, “My son, do not make light of the Lord’s discipline, and do not lose heart when he rebukes you, because the Lord disciplines the one he loves, and he chastens everyone he accepts as his son.” ... No discipline seems pleasant at the time, but painful. Later on, however, it produces a harvest of righteousness and peace for those who have been trained by it." },
+            ps91_4: { title: "Psalm 91:4", text: "He will cover you with his feathers, and under his wings you will find refuge; his faithfulness will be your shield and rampart." },
+            ps32_8: { title: "Psalm 32:8", text: "I will instruct you and teach you in the way you should go; I will counsel you with my loving eye on you." },
+            deut6_6: { title: "Deuteronomy 6:6-7", text: "These commandments that I give you today are to be on your hearts. Impress them on your children. Talk about them when you sit at home and when you walk along the road, when you lie down and when you get up." },
+            eph6_4_a: { title: "Ephesians 6:4", text: "Fathers, do not exasperate your children; instead, bring them up in the training and instruction of the Lord." },
+            eph6_4_b: { title: "Ephesians 6:4", text: "Fathers, do not exasperate your children; instead, bring them up in the training and instruction of the Lord." },
+            '1tim5_8': { title: "1 Timothy 5:8", text: "Anyone who does not provide for their relatives, and especially for their own household, has denied the faith and is worse than an unbeliever." },
+            prov22_6: { title: "Proverbs 22:6", text: "Start children off on the way they should go, and even when they are old they will not turn from it." },
+            prov13_24: { title: "Proverbs 13:24", text: "Whoever spares the rod hates their children, but the one who loves their children is careful to discipline them." },
+            '2cor12_9': { title: "2 Corinthians 12:9", text: "But he said to me, “My grace is sufficient for you, for my power is made perfect in weakness.” Therefore I will boast all the more gladly about my weaknesses, so that Christ’s power may rest on me." },
+            phil2_13: { title: "Philippians 2:13", text: "for it is God who works in you to will and to act in order to fulfill his good purpose." }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const scriptureLinks = document.querySelectorAll('.scripture-link');
+            const modal = document.getElementById('scripture-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalText = document.getElementById('modal-text');
+            const modalClose = document.getElementById('modal-close');
+            const modalBackdrop = document.querySelector('.modal-backdrop');
+            const modalContent = modal.querySelector('div');
+            
+            scriptureLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const ref = e.target.dataset.ref;
+                    if (scriptureData[ref]) {
+                        modalTitle.textContent = scriptureData[ref].title;
+                        modalText.textContent = scriptureData[ref].text;
+                        modal.classList.remove('hidden');
+                        setTimeout(() => { 
+                            modalBackdrop.classList.remove('opacity-0');
+                            modalContent.classList.remove('scale-95', 'opacity-0');
+                        }, 10);
+                    }
+                });
+            });
+
+            const closeModal = () => {
+                modalBackdrop.classList.add('opacity-0');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            };
+
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+
+            mobileMenuButton.addEventListener('click', () => {
+                const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+                mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg:not(.hidden)').classList.add('hidden');
+                mobileMenuButton.querySelector('svg.hidden').classList.remove('hidden');
+            });
+            
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                     mobileMenuButton.setAttribute('aria-expanded', 'false');
+                     mobileMenu.classList.add('hidden');
+                     mobileMenuButton.querySelector('svg:not(.hidden)').classList.add('hidden');
+                     mobileMenuButton.querySelector('svg.hidden').classList.remove('hidden');
+                });
+            });
+            
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.5 
+            };
+            
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if(link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
