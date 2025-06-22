@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Analysis of τοῦ πονηροῦ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Earth Tones (e.g., bg-stone-50, text-gray-800, amber-600 for accents) -->
+    <!-- Application Structure Plan: A single-page dashboard. The top section contains an introduction, a summary doughnut chart showing translation frequencies, and filter buttons. The main content area is a responsive grid of 'verse cards', each displaying a specific occurrence and its six translations. This structure was chosen to provide both a high-level summary (the chart) and detailed, comparable data (the cards). The filtering allows users to dynamically query the dataset based on translation category, which is the primary analytical task this app supports. -->
+    <!-- Visualization & Content Choices: Report Info: Table of verses and translations. -> Goal: Compare translations and see frequency. -> Viz/Presentation: Interactive card grid for comparison, Doughnut Chart (Chart.js) for frequency. -> Interaction: Filter buttons highlight relevant cards. -> Justification: This combined approach addresses both macro (frequency) and micro (verse-by-verse comparison) analysis of the source data in a highly interactive and intuitive way. -> Library/Method: Chart.js for the chart; HTML/Tailwind/JS for the interactive card grid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            height: 320px;
+            max-height: 320px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .verse-card {
+            transition: all 0.3s ease-in-out;
+            opacity: 1;
+        }
+        .verse-card.filtered-out {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+        .highlight-border {
+            box-shadow: 0 0 0 3px #D97706;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+
+        <header class="text-center mb-12">
+            <h1 class="text-3xl md:text-5xl font-bold text-gray-900 mb-2">Interactive Analysis of <span class="font-mono text-amber-700">τοῦ πονηροῦ</span></h1>
+            <p class="text-lg text-gray-600">Exploring translations of "the evil one" in the New Testament.</p>
+        </header>
+
+        <section id="dashboard" class="mb-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-4">How is <span class="font-mono text-amber-700">τοῦ πονηροῦ</span> Translated?</h2>
+                    <p class="text-gray-600 mb-6">
+                        The Greek phrase <span class="font-mono">τοῦ πονηροῦ</span> appears throughout the New Testament. Its translation often varies, carrying different theological nuances. Sometimes it's rendered as a personal being (like "the evil one"), and other times as an abstract concept (like "evil"). This interactive tool allows you to see these differences across major English translations. Use the filters below to highlight verses based on the translation category, and explore the cards for a side-by-side comparison.
+                    </p>
+                    <div id="filter-controls" class="flex flex-wrap gap-3">
+                        <button data-filter="all" class="filter-btn bg-amber-600 text-white font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">Show All</button>
+                        <button data-filter="personal" class="filter-btn bg-white text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">Personal ("the evil one")</button>
+                        <button data-filter="abstract" class="filter-btn bg-white text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">Abstract ("evil")</button>
+                        <button data-filter="wicked" class="filter-btn bg-white text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">Wicked (KJV)</button>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-xl font-bold text-center mb-4">Translation Frequency</h3>
+                    <div class="chart-container">
+                        <canvas id="summaryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <main id="verse-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        </main>
+
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const verseData = [
+            {
+                reference: 'Matthew 5:37',
+                tags: ['personal', 'abstract'],
+                translations: {
+                    CSB: "But let your 'Yes' be 'Yes,' and your 'No,' 'No.' Anything more than this comes from the evil one.",
+                    ESV: "Let what you say be simply 'Yes' or 'No'; anything more than this comes from evil.",
+                    NET: "But let your ‘Yes’ be ‘Yes’ and your ‘No’ be ‘No.’ Anything more than this comes from the evil one.",
+                    KJV: "But let your communication be, Yea, yea; Nay, nay: for whatsoever is more than these cometh of evil.",
+                    NASB: "But let your statement be, ‘Yes, yes’ or ‘No, no’; anything more than these is of evil.",
+                    NIV: "All you need to say is simply ‘Yes’ or ‘No’; anything beyond this comes from the evil one."
+                }
+            },
+            {
+                reference: 'Matthew 6:13',
+                tags: ['personal', 'abstract'],
+                translations: {
+                    CSB: "And do not bring us into temptation, but rescue us from the evil one.",
+                    ESV: "And lead us not into temptation, but deliver us from evil.",
+                    NET: "And do not lead us into temptation, but deliver us from the evil one.",
+                    KJV: "And lead us not into temptation, but deliver us from evil: For thine is the kingdom, and the power, and the glory, for ever. Amen.",
+                    NASB: "And do not lead us into temptation, but deliver us from evil.",
+                    NIV: "And lead us not into temptation, but deliver us from the evil one."
+                }
+            },
+            {
+                reference: 'Matthew 13:19',
+                tags: ['personal', 'wicked'],
+                translations: {
+                    CSB: "When anyone hears the word of the kingdom and does not understand it, the evil one comes and snatches away what was sown in his heart. This is the one sown with seed along the path.",
+                    ESV: "When anyone hears the word of the kingdom and does not understand it, the evil one comes and snatches away what has been sown in his heart. This is what was sown along the path.",
+                    NET: "Whenever anyone hears the word of the kingdom and does not understand it, the evil one comes and snatches what was sown in his heart. This is the seed sown along the path.",
+                    KJV: "When any one heareth the word of the kingdom, and understandeth it not, then cometh the wicked one, and catcheth away that which was sown in his heart. This is he which received seed by the way side.",
+                    NASB: "When anyone hears the word of the kingdom and does not understand it, the evil one comes and snatches away what has been sown in his heart. This is the one sown beside the road.",
+                    NIV: "When anyone hears the message about the kingdom but does not understand it, the evil one comes and snatches away what was sown in their heart. This is the seed sown along the path."
+                }
+            },
+            {
+                reference: 'Matthew 13:38',
+                tags: ['personal', 'wicked'],
+                translations: {
+                    CSB: "The field is the world, and the good seed are the children of the kingdom. The weeds are the children of the evil one.",
+                    ESV: "The field is the world, and the good seed are the sons of the kingdom. The weeds are the sons of the evil one.",
+                    NET: "The field is the world, and the good seed are the people of the kingdom. The weeds are the people of the evil one.",
+                    KJV: "The field is the world; the good seed are the children of the kingdom; but the tares are the children of the wicked one;",
+                    NASB: "The field is the world; and as for the good seed, these are the sons of the kingdom; and the weeds are the sons of the evil one;",
+                    NIV: "The field is the world, and the good seed stands for the people of the kingdom. The weeds are the people of the evil one."
+                }
+            },
+            {
+                reference: 'Luke 11:4',
+                tags: ['personal', 'abstract'],
+                translations: {
+                    CSB: "And forgive us our sins, for we ourselves also forgive everyone who is indebted to us. And do not bring us into temptation. [But rescue us from the evil one.]",
+                    ESV: "And forgive us our sins, for we ourselves forgive everyone who is indebted to us. And lead us not into temptation.",
+                    NET: "And forgive us our sins, for we ourselves forgive everyone who is indebted to us. And do not lead us into temptation.",
+                    KJV: "And forgive us our sins; for we also forgive every one that is indebted to us. And lead us not into temptation; but deliver us from evil.",
+                    NASB: "And forgive us our sins, For we ourselves also forgive everyone who is indebted to us. And do not lead us into temptation.",
+                    NIV: "Forgive us our sins, for we also forgive everyone who sins against us. And lead us not into temptation.’"
+                }
+            },
+            {
+                reference: 'John 17:15',
+                tags: ['personal', 'abstract'],
+                translations: {
+                    CSB: "I am not asking that you take them out of the world, but that you protect them from the evil one.",
+                    ESV: "I do not ask that you take them out of the world, but that you keep them from the evil one.",
+                    NET: "I am not asking you to take them out of the world, but to protect them from the evil one.",
+                    KJV: "I pray not that thou shouldest take them out of the world, but that thou shouldest keep them from the evil.",
+                    NASB: "I am not asking You to take them out of the world, but to keep them from the evil one.",
+                    NIV: "My prayer is not that you take them out of the world but that you protect them from the evil one."
+                }
+            },
+            {
+                reference: 'Ephesians 6:16',
+                tags: ['personal', 'wicked'],
+                translations: {
+                    CSB: "In every situation take up the shield of faith with which you can extinguish all the flaming arrows of the evil one.",
+                    ESV: "In all circumstances take up the shield of faith, with which you can extinguish all the flaming darts of the evil one;",
+                    NET: "In all circumstances take up the shield of faith, with which you can extinguish all the flaming missiles of the evil one.",
+                    KJV: "Above all, taking the shield of faith, wherewith ye shall be able to quench all the fiery darts of the wicked one.",
+                    NASB: "In addition to all, take up the shield of faith with which you will be able to extinguish all the flaming arrows of the evil one.",
+                    NIV: "In addition to all this, take up the shield of faith, with which you can extinguish all the flaming arrows of the evil one."
+                }
+            },
+            {
+                reference: '2 Thessalonians 3:3',
+                tags: ['personal', 'abstract'],
+                translations: {
+                    CSB: "But the Lord is faithful; he will strengthen you and guard you from the evil one.",
+                    ESV: "But the Lord is faithful. He will establish you and guard you against the evil one.",
+                    NET: "But the Lord is faithful, and he will strengthen you and guard you from the evil one.",
+                    KJV: "But the Lord is faithful, who shall stablish you, and keep you from evil.",
+                    NASB: "But the Lord is faithful, and He will strengthen and protect you from the evil one.",
+                    NIV: "But the Lord is faithful, and he will strengthen you and protect you from the evil one."
+                }
+            },
+            {
+                reference: '1 John 2:13',
+                tags: ['personal', 'wicked'],
+                translations: {
+                    CSB: "I am writing to you, fathers, because you have known the one who is from the beginning. I am writing to you, young men, because you have conquered the evil one.",
+                    ESV: "I am writing to you, fathers, because you know him who is from the beginning. I am writing to you, young men, because you have overcome the evil one.",
+                    NET: "I am writing to you, fathers, because you have known the one who is from the beginning. I am writing to you, young people, because you have conquered the evil one.",
+                    KJV: "I write unto you, fathers, because ye have known him that is from the beginning. I write unto you, young men, because ye have overcome the wicked one.",
+                    NASB: "I am writing to you, fathers, because you have come to know Him who has been from the beginning. I am writing to you, young men, because you have overcome the evil one.",
+                    NIV: "I am writing to you, fathers, because you know him who is from the beginning. I am writing to you, young men, because you have overcome the evil one."
+                }
+            },
+            {
+                reference: '1 John 2:14',
+                tags: ['personal', 'wicked'],
+                translations: {
+                    CSB: "I have written to you, children, because you have known the Father. I have written to you, fathers, because you have known the one who is from the beginning. I have written to you, young men, because you are strong, God’s word remains in you, and you have conquered the evil one.",
+                    ESV: "I write to you, children, because you know the Father. I write to you, fathers, because you know him who is from the beginning. I write to you, young men, because you are strong, and the word of God abides in you, and you have overcome the evil one.",
+                    NET: "I have written to you, children, because you have known the Father. I have written to you, fathers, because you have known the one who is from the beginning. I have written to you, young people, because you are strong, and the word of God resides in you, and you have conquered the evil one.",
+                    KJV: "I have written unto you, fathers, because ye have known him that is from the beginning. I have written unto you, young men, because ye are strong, and the word of God abideth in you, and ye have overcome the wicked one.",
+                    NASB: "I have written to you, children, because you know the Father. I have written to you, fathers, because you know Him who has been from the beginning. I have written to you, young men, because you are strong, and the word of God abides in you, and you have overcome the evil one.",
+                    NIV: "I am writing to you, dear children, because you know the Father. I am writing to you, fathers, because you know him who is from the beginning. I am writing to you, young men, because you are strong, and the word of God lives in you, and you have overcome the evil one."
+                }
+            },
+            {
+                reference: '1 John 3:12',
+                tags: ['personal', 'wicked'],
+                translations: {
+                    CSB: "We must not be like Cain, who was of the evil one and murdered his brother. And why did he murder him? Because his works were evil, and his brother’s were righteous.",
+                    ESV: "We should not be like Cain, who was of the evil one and murdered his brother. And why did he murder him? Because his own deeds were evil and his brother's righteous.",
+                    NET: "not like Cain who was of the evil one and brutally murdered his brother. And why did he murder him? Because his deeds were evil, but his brother's were righteous.",
+                    KJV: "Not as Cain, who was of that wicked one, and slew his brother. And wherefore slew he him? Because his own works were evil, and his brother's righteous.",
+                    NASB: "not as Cain, who was of the evil one and slew his brother. And for what reason did he slay him? Because his deeds were evil, and his brother’s were righteous.",
+                    NIV: "Do not be like Cain, who belonged to the evil one and murdered his brother. And why did he murder him? Because his own actions were evil and his brother’s were righteous."
+                }
+            },
+            {
+                reference: '1 John 5:18',
+                tags: ['personal', 'wicked'],
+                translations: {
+                    CSB: "We know that everyone who has been born of God does not sin, but the one who is born of God keeps himself, and the evil one does not touch him.",
+                    ESV: "We know that everyone who has been born of God does not keep on sinning, but he who was born of God protects him, and the evil one does not touch him.",
+                    NET: "We know that everyone fathered by God does not sin, but the one who was fathered by God protects him, and the evil one does not touch him.",
+                    KJV: "We know that whosoever is born of God sinneth not; but he that is begotten of God keepeth himself, and that wicked one toucheth him not.",
+                    NASB: "We know that everyone who has been born of God does not sin; but He who was born of God keeps him, and the evil one does not touch him.",
+                    NIV: "We know that anyone born of God does not continue to sin; the One who was born of God keeps them safe, and the evil one cannot harm them."
+                }
+            },
+            {
+                reference: '1 John 5:19',
+                tags: ['personal', 'abstract'],
+                translations: {
+                    CSB: "We know that we are of God, and the whole world is under the power of the evil one.",
+                    ESV: "We know that we are from God, and the whole world lies in the power of the evil one.",
+                    NET: "We know that we are from God, and the whole world lies in the power of the evil one.",
+                    KJV: "And we know that we are of God, and the whole world lieth in wickedness.",
+                    NASB: "We know that we are of God, and that the whole world lies in the power of the evil one.",
+                    NIV: "We know that we are children of God, and that the whole world is under the control of the evil one."
+                }
+            }
+        ];
+
+        const grid = document.getElementById('verse-grid');
+        const filterControls = document.getElementById('filter-controls');
+        let summaryChart;
+
+        function highlightPhrase(text) {
+            const phrases = ["the evil one", "evil", "the wicked one", "that wicked one", "wickedness"];
+            let highlightedText = text;
+            phrases.forEach(phrase => {
+                const regex = new RegExp(`(${phrase})`, 'gi');
+                highlightedText = highlightedText.replace(regex, `<strong class="text-amber-700 font-bold">$1</strong>`);
+            });
+            return highlightedText;
+        }
+
+        function renderCards() {
+            grid.innerHTML = '';
+            verseData.forEach(verse => {
+                const card = document.createElement('div');
+                card.className = 'verse-card bg-white p-6 rounded-lg shadow-sm border border-gray-200';
+                card.dataset.tags = verse.tags.join(' ');
+
+                let translationsHtml = '';
+                for (const [version, text] of Object.entries(verse.translations)) {
+                    translationsHtml += `
+                        <div class="mb-3">
+                            <h4 class="font-bold text-sm text-gray-500">${version}</h4>
+                            <p class="text-gray-700 text-sm">${highlightPhrase(text)}</p>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <h3 class="text-xl font-bold mb-4 pb-2 border-b border-gray-200">${verse.reference}</h3>
+                    ${translationsHtml}
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        function filterCards(filter) {
+            const cards = document.querySelectorAll('.verse-card');
+            cards.forEach(card => {
+                card.classList.remove('filtered-out');
+                if (filter !== 'all' && !card.dataset.tags.includes(filter)) {
+                    card.classList.add('filtered-out');
+                }
+            });
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                 btn.classList.remove('bg-amber-600', 'text-white');
+                 btn.classList.add('bg-white', 'text-gray-700');
+            });
+            document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('bg-amber-600', 'text-white');
+            document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.remove('bg-white', 'text-gray-700');
+        }
+
+        function setupEventListeners() {
+            filterControls.addEventListener('click', (e) => {
+                if (e.target.matches('.filter-btn')) {
+                    const filter = e.target.dataset.filter;
+                    filterCards(filter);
+                }
+            });
+        }
+        
+        function renderSummaryChart() {
+            const ctx = document.getElementById('summaryChart').getContext('2d');
+            
+            const counts = { personal: 0, abstract: 0, wicked: 0 };
+            verseData.forEach(verse => {
+                if (verse.tags.includes('personal')) counts.personal++;
+                if (verse.tags.includes('abstract')) counts.abstract++;
+                if (verse.tags.includes('wicked')) counts.wicked++;
+            });
+
+            summaryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Personal ("the evil one")', 'Abstract ("evil")', 'Wicked (KJV)'],
+                    datasets: [{
+                        label: 'Translation Frequency',
+                        data: [counts.personal, counts.abstract, counts.wicked],
+                        backgroundColor: [
+                            'rgba(217, 119, 6, 0.7)',  
+                            'rgba(107, 114, 128, 0.7)',
+                            'rgba(120, 53, 15, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(217, 119, 6)',
+                            'rgb(107, 114, 128)',
+                            'rgb(120, 53, 15)'
+                        ],
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed;
+                                    }
+                                    return label + ' occurrences';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+        function init() {
+            renderCards();
+            setupEventListeners();
+            renderSummaryChart();
+        }
+
+        init();
+    });
+    </script>
+
+</body>
+</html>
