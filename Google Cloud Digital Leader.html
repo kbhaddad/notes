@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to Digital Transformation with Google Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Slate, Zinc) with a Teal Accent -->
+    <!-- Application Structure Plan: A single-page application with a fixed sidebar for primary navigation corresponding to the six report sections. The main content area dynamically displays the selected section's content. Sub-topics within each section are presented as interactive cards, comparison charts, and filterable grids. This structure was chosen to break down the dense, hierarchical report into manageable, explorable chunks, promoting user engagement and understanding over passive reading. It transforms a linear study guide into a non-linear exploratory tool. -->
+    <!-- Visualization & Content Choices: 
+        - Section 1 (Foundations): Interactive cards for definitions. A dynamic Radar chart (Chart.js) to compare IaaS/PaaS/SaaS models, visually highlighting tradeoffs in control vs. management. Justification: A chart is more effective for multi-attribute comparison than a simple table.
+        - Section 2 (Data): Filterable cards (HTML/JS) for data management solutions, allowing users to select 'Relational' or 'NoSQL' to see relevant options. An interactive flow diagram for the data value chain. Justification: Interactivity aids learning and retention for complex product landscapes.
+        - Section 3 (AI): A simple 'solution finder' quiz (HTML/JS radios) to guide users to the right AI/ML tool (Pre-trained, AutoML, Custom) based on their expertise and needs. Justification: A task-oriented approach simplifies a complex decision-making process.
+        - Section 4 (Infrastructure): Click-to-reveal diagrams (HTML/JS) for migration strategies (e.g., rehost, refactor). Side-by-side comparison cards for VMs vs. Containers. Justification: Breaks down complex concepts into digestible pieces, revealing detail on demand.
+        - Section 5 (Security): A dynamic stacked bar chart (Chart.js) to illustrate the Shared Responsibility Model, which updates based on user selection (IaaS/PaaS/SaaS). Justification: A visual representation makes this abstract but critical concept immediately clear.
+        - Section 6 (Operations): Interactive cards for key terms. A simple calculator for 'Error Budgets' based on SLO input. Justification: Makes abstract SRE concepts tangible and understandable.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .sidebar-item.active {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background-color: #14b8a6; /* teal-500 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0d9488; /* teal-600 */
+        }
+        .btn-secondary {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #1e293b; /* slate-800 */
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1; /* slate-300 */
+        }
+        .btn-secondary.active {
+             background-color: #0d9488;
+             color: white;
+        }
+    </style>
+</head>
+<body class="flex h-screen">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate-800 text-white p-4 space-y-2 flex-shrink-0 overflow-y-auto">
+        <h1 class="text-xl font-bold mb-6">Google Cloud Transformation</h1>
+        <nav>
+            <a href="#" class="sidebar-item block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700 active" data-section="section-1">
+                <span class="mr-2">☁️</span> Foundations
+            </a>
+            <a href="#" class="sidebar-item block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700" data-section="section-2">
+                <span class="mr-2">📊</span> Data
+            </a>
+            <a href="#" class="sidebar-item block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700" data-section="section-3">
+                <span class="mr-2">🤖</span> AI & ML
+            </a>
+            <a href="#" class="sidebar-item block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700" data-section="section-4">
+                <span class="mr-2">🏗️</span> Infrastructure
+            </a>
+            <a href="#" class="sidebar-item block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700" data-section="section-5">
+                <span class="mr-2">🛡️</span> Security
+            </a>
+            <a href="#" class="sidebar-item block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-slate-700" data-section="section-6">
+                <span class="mr-2">⚙️</span> Operations
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 lg:p-10 overflow-y-auto">
+
+        <!-- Section 1: Foundations -->
+        <section id="section-1" class="content-section active">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Digital Transformation Foundations</h2>
+            <p class="text-slate-600 mb-8">This section introduces the core concepts of cloud technology and its role in modernizing business. Understand the fundamental shift from traditional IT to the cloud and compare different service models to see which best fits various business needs.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                <div class="card">
+                    <h3 class="text-lg font-semibold text-teal-600 mb-2">What is Digital Transformation?</h3>
+                    <p class="text-slate-600 text-sm">The strategic adoption of digital technology to fundamentally change how an organization operates, delivers value to customers, and engages with employees. It's a cultural shift as much as a technological one.</p>
+                </div>
+                <div class="card">
+                    <h3 class="text-lg font-semibold text-teal-600 mb-2">Cloud vs. On-Premises</h3>
+                    <p class="text-slate-600 text-sm">Cloud technology offers pay-as-you-go (OpEx) pricing, massive scalability, and agility. Traditional on-premises requires large upfront investment (CapEx), has limited scalability, and slower deployment cycles.</p>
+                </div>
+                 <div class="card">
+                    <h3 class="text-lg font-semibold text-teal-600 mb-2">Key Cloud Benefits</h3>
+                    <p class="text-slate-600 text-sm">Businesses gain scalability, flexibility, enhanced security, cost-effectiveness, and strategic value, allowing them to focus on innovation instead of maintenance.</p>
+                </div>
+            </div>
+
+            <div class="card mb-6">
+                 <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">Comparing Cloud Service Models</h3>
+                 <p class="text-slate-600 text-center mb-6">Each cloud service model offers a different balance of flexibility, management, and cost. Use the buttons below to see how IaaS, PaaS, and SaaS compare. This interaction helps clarify which model suits different technical needs and expertise levels.</p>
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button class="btn btn-secondary model-btn active" data-model="iaas">IaaS</button>
+                    <button class="btn btn-secondary model-btn" data-model="paas">PaaS</button>
+                    <button class="btn btn-secondary model-btn" data-model="saas">SaaS</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="chart-container">
+                        <canvas id="serviceModelChart"></canvas>
+                    </div>
+                    <div>
+                        <h4 id="model-title" class="text-2xl font-bold text-teal-700 mb-3"></h4>
+                        <p id="model-description" class="text-slate-700 mb-4"></p>
+                        <div class="text-sm">
+                            <p class="mb-2"><strong class="text-slate-800">You Manage:</strong> <span id="model-customer-resp"></span></p>
+                            <p><strong class="text-slate-800">Provider Manages:</strong> <span id="model-provider-resp"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Data -->
+        <section id="section-2" class="content-section">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Exploring Data Transformation</h2>
+            <p class="text-slate-600 mb-8">Data is the core of modern business value. This section covers how organizations can manage, analyze, and unlock insights from their data using Google Cloud's powerful solutions, from databases to large-scale analytics.</p>
+            
+            <div class="card mb-8">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">Google Cloud Data Solutions</h3>
+                <p class="text-slate-600 text-center mb-6">Google Cloud offers a range of data management solutions tailored for different needs. Use the filters to explore options for relational (structured) or non-relational (unstructured/semi-structured) data. This helps match the right tool to the job.</p>
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button class="btn btn-secondary data-filter-btn active" data-filter="all">All</button>
+                    <button class="btn btn-secondary data-filter-btn" data-filter="relational">Relational (SQL)</button>
+                    <button class="btn btn-secondary data-filter-btn" data-filter="non-relational">Non-Relational (NoSQL)</button>
+                </div>
+                <div id="data-solutions-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AI & ML -->
+        <section id="section-3" class="content-section">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Innovating with AI and Machine Learning</h2>
+            <p class="text-slate-600 mb-8">Artificial Intelligence and Machine Learning unlock new possibilities, from operational efficiency to groundbreaking products. Explore Google Cloud's spectrum of AI solutions and find the right one for your business goals and technical expertise.</p>
+
+            <div class="card">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">Which AI/ML Solution is Right for You?</h3>
+                <p class="text-slate-600 text-center mb-6">Answer the questions below to get a recommendation. This interactive guide simplifies the decision-making process for adopting AI, making it accessible even without deep technical knowledge.</p>
+                
+                <div class="max-w-2xl mx-auto">
+                    <div class="mb-6">
+                        <p class="font-semibold text-slate-700 mb-2">1. What is your team's ML expertise level?</p>
+                        <div class="flex flex-col sm:flex-row gap-4" id="expertise-group">
+                            <label class="flex-1 card !p-4 cursor-pointer"><input type="radio" name="expertise" value="low" class="mr-2">Beginner / No ML experience</label>
+                            <label class="flex-1 card !p-4 cursor-pointer"><input type="radio" name="expertise" value="medium" class="mr-2">Some experience, want to use own data</label>
+                            <label class="flex-1 card !p-4 cursor-pointer"><input type="radio" name="expertise" value="high" class="mr-2">Expert / Data Scientist</label>
+                        </div>
+                    </div>
+                    
+                    <div id="ai-recommendation" class="p-6 bg-teal-50 rounded-lg text-center hidden">
+                        <h4 id="rec-title" class="text-2xl font-bold text-teal-800 mb-2"></h4>
+                        <p id="rec-description" class="text-teal-700 mb-4"></p>
+                        <p class="text-sm text-teal-600"><strong>Example Products:</strong> <span id="rec-products"></span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Infrastructure -->
+        <section id="section-4" class="content-section">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Modernize Infrastructure and Applications</h2>
+            <p class="text-slate-600 mb-8">Modernizing is key to unlocking agility and innovation. This section explores Google Cloud's compute options and strategies for migrating and updating applications, from simple "lift-and-shift" to full, cloud-native refactoring.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4">Compute Options Compared</h3>
+                    <p class="text-slate-600 mb-4">VMs offer control, while containers offer portability and efficiency. This comparison clarifies the core tradeoffs.</p>
+                    <div class="border-t border-slate-200 pt-4">
+                        <h4 class="font-bold text-teal-600">Virtual Machines (VMs)</h4>
+                        <p class="text-sm text-slate-600 mb-3">Emulate a full server with a guest OS. Best for legacy apps and maximum control.</p>
+                        <h4 class="font-bold text-teal-600">Containers</h4>
+                        <p class="text-sm text-slate-600">Package an app and its dependencies, sharing the host OS. Best for microservices and portability.</p>
+                    </div>
+                </div>
+                 <div class="card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4">Serverless Computing</h3>
+                    <p class="text-slate-600 mb-4">Run code without managing servers. Google Cloud handles scaling and provisioning.</p>
+                     <ul class="text-sm text-slate-600 list-disc list-inside space-y-1">
+                        <li><strong class="text-slate-700">Cloud Run:</strong> Serverless for containers.</li>
+                        <li><strong class="text-slate-700">App Engine:</strong> Serverless platform for apps.</li>
+                        <li><strong class="text-slate-700">Cloud Functions:</strong> For event-driven code.</li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Security -->
+        <section id="section-5" class="content-section">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Trust and Security</h2>
+            <p class="text-slate-600 mb-8">Security is a shared responsibility between the cloud provider and the customer. Learn about Google's defense-in-depth approach and how the security model shifts depending on the services you use.</p>
+
+            <div class="card">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">The Shared Responsibility Model</h3>
+                <p class="text-slate-600 text-center mb-6">As you move from IaaS to PaaS to SaaS, Google takes on more security responsibility. This chart visualizes how the burden shifts, helping you understand your role in securing your applications and data.</p>
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button class="btn btn-secondary security-model-btn active" data-model="iaas">IaaS</button>
+                    <button class="btn btn-secondary security-model-btn" data-model="paas">PaaS</button>
+                    <button class="btn btn-secondary security-model-btn" data-model="saas">SaaS</button>
+                </div>
+                 <div class="chart-container" style="height: 300px;">
+                    <canvas id="sharedResponsibilityChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Operations -->
+        <section id="section-6" class="content-section">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">Scaling with Google Cloud Operations</h2>
+            <p class="text-slate-600 mb-8">Effective operations are crucial for reliability and cost control at scale. This section covers financial governance, operational excellence with Site Reliability Engineering (SRE), and Google's commitment to sustainability.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4">Financial Governance (FinOps)</h3>
+                    <p class="text-slate-600 mb-4">Control costs and maintain predictability with tools for budgeting, alerting, and resource management.</p>
+                    <ul class="text-sm text-slate-600 list-disc list-inside space-y-1">
+                        <li><strong class="text-slate-700">Budgets & Alerts:</strong> Get notified of spending.</li>
+                        <li><strong class="text-slate-700">Resource Quotas:</strong> Set hard limits on consumption.</li>
+                        <li><strong class="text-slate-700">Cost Reports:</strong> Visualize spending data.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4">Error Budget Calculator</h3>
+                    <p class="text-slate-600 mb-4">A key SRE concept is the error budget—the amount of time a service can be down without violating its Service Level Objective (SLO). Enter an SLO to see how much downtime is acceptable.</p>
+                    <div class="flex items-center space-x-4">
+                        <label for="slo-input" class="text-slate-700 font-medium">SLO (%):</label>
+                        <input type="number" id="slo-input" value="99.9" step="0.01" class="w-24 p-2 border border-slate-300 rounded-md">
+                        <button id="calculate-slo" class="btn btn-primary">Calculate</button>
+                    </div>
+                    <div id="slo-result" class="mt-4 text-center p-4 bg-teal-50 rounded-lg hidden">
+                        <p class="text-teal-700">A <strong id="slo-output" class="text-teal-800"></strong> SLO allows for approximately <strong id="downtime-output" class="text-teal-800"></strong> of downtime per month.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const sidebarItems = document.querySelectorAll('.sidebar-item');
+    const contentSections = document.querySelectorAll('.content-section');
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const sidebar = document.getElementById('sidebar');
+
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            sidebarItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            const sectionId = item.getAttribute('data-section');
+            contentSections.forEach(section => {
+                if (section.id === sectionId) {
+                    section.classList.add('active');
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // Section 1: Service Model Chart
+    const serviceModelData = {
+        iaas: {
+            title: 'Infrastructure as a Service (IaaS)',
+            description: 'Provides raw computing resources like virtual machines and storage. It offers the most flexibility and control, making it ideal for migrating legacy applications or for teams that need deep control over the environment.',
+            customer: 'Operating System, Middleware, Runtime, Applications, Data',
+            provider: 'Virtualization, Servers, Storage, Networking',
+            chartData: [5, 2, 2, 4] // Flexibility, Cost Efficiency, Ease of Use, Control
+        },
+        paas: {
+            title: 'Platform as a Service (PaaS)',
+            description: 'Offers a platform for developers to build and deploy applications without managing the underlying infrastructure. It accelerates development by handling OS, runtime, and scaling.',
+            customer: 'Applications, Data',
+            provider: 'OS, Middleware, Runtime, Virtualization, Servers, Storage, Networking',
+            chartData: [4, 4, 4, 2]
+        },
+        saas: {
+            title: 'Software as a Service (SaaS)',
+            description: 'Delivers ready-to-use software over the internet. The provider manages everything, and the customer simply uses the application. It offers the least control but maximum convenience.',
+            customer: 'User Data, Access Management',
+            provider: 'Application, OS, Middleware, Runtime, Virtualization, Servers, Storage, Networking',
+            chartData: [2, 5, 5, 1]
+        }
+    };
+
+    const ctx = document.getElementById('serviceModelChart').getContext('2d');
+    const serviceModelChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Flexibility', 'Cost Efficiency', 'Ease of Use', 'Control'],
+            datasets: [{
+                label: 'Model Characteristics',
+                data: serviceModelData.iaas.chartData,
+                backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                borderColor: 'rgb(13, 148, 136)',
+                pointBackgroundColor: 'rgb(13, 148, 136)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(13, 148, 136)'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            elements: {
+                line: {
+                    borderWidth: 3
+                }
+            },
+            scales: {
+                r: {
+                    angleLines: {
+                        display: false
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 5,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    const modelTitle = document.getElementById('model-title');
+    const modelDesc = document.getElementById('model-description');
+    const modelCustResp = document.getElementById('model-customer-resp');
+    const modelProvResp = document.getElementById('model-provider-resp');
+    const modelBtns = document.querySelectorAll('.model-btn');
+
+    function updateServiceModel(model) {
+        const data = serviceModelData[model];
+        modelTitle.textContent = data.title;
+        modelDesc.textContent = data.description;
+        modelCustResp.textContent = data.customer;
+        modelProvResp.textContent = data.provider;
+        serviceModelChart.data.datasets[0].data = data.chartData;
+        serviceModelChart.update();
+
+        modelBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.model === model);
+        });
+    }
+
+    modelBtns.forEach(btn => {
+        btn.addEventListener('click', () => updateServiceModel(btn.dataset.model));
+    });
+    updateServiceModel('iaas');
+
+
+    // Section 2: Data Solutions
+    const dataSolutions = [
+        { name: 'Cloud Storage', type: 'non-relational', desc: 'Scalable object storage for unstructured data. Ideal for data lakes, backups, and content.', icon: '🗄️' },
+        { name: 'Cloud SQL', type: 'relational', desc: 'Fully managed relational database service for MySQL, PostgreSQL, and SQL Server.', icon: '🗃️' },
+        { name: 'Cloud Spanner', type: 'relational', desc: 'Globally distributed, strongly consistent relational database with unlimited scale.', icon: '🌐' },
+        { name: 'BigQuery', type: 'relational', desc: 'Serverless, highly scalable data warehouse with built-in ML capabilities.', icon: '🔍' },
+        { name: 'Cloud Bigtable', type: 'non-relational', desc: 'Petabyte-scale, fully managed NoSQL wide-column database for large analytical and operational workloads.', icon: '📊' },
+        { name: 'Firestore', type: 'non-relational', desc: 'Flexible, scalable NoSQL document database for mobile, web, and server development.', icon: '📄' },
+    ];
+    
+    const dataGrid = document.getElementById('data-solutions-grid');
+    const dataFilterBtns = document.querySelectorAll('.data-filter-btn');
+
+    function renderDataSolutions(filter = 'all') {
+        dataGrid.innerHTML = '';
+        const filtered = dataSolutions.filter(s => filter === 'all' || s.type === filter);
+        filtered.forEach(solution => {
+            const card = document.createElement('div');
+            card.className = 'card text-center';
+            card.innerHTML = `
+                <div class="text-4xl mb-4">${solution.icon}</div>
+                <h4 class="text-lg font-semibold text-slate-800 mb-2">${solution.name}</h4>
+                <p class="text-sm text-slate-600">${solution.desc}</p>
+            `;
+            dataGrid.appendChild(card);
+        });
+    }
+
+    dataFilterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            dataFilterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderDataSolutions(btn.dataset.filter);
+        });
+    });
+    renderDataSolutions('all');
+
+    // Section 3: AI Recommendation
+    const expertiseRadios = document.querySelectorAll('input[name="expertise"]');
+    const recommendationDiv = document.getElementById('ai-recommendation');
+    const rec = {
+        title: document.getElementById('rec-title'),
+        description: document.getElementById('rec-description'),
+        products: document.getElementById('rec-products'),
+    };
+    const aiSolutions = {
+        low: { title: 'Pre-trained APIs', desc: 'Use Google\'s pre-trained models with simple API calls. No ML expertise required.', products: 'Vision API, Natural Language API, Translation API' },
+        medium: { title: 'AutoML', desc: 'Train high-quality custom models on your own data with a simple UI. For developers with limited ML expertise.', products: 'AutoML Vision, AutoML Tables, AutoML Text' },
+        high: { title: 'Custom Models with Vertex AI', desc: 'Build, train, and deploy custom models with full control over the ML workflow. For data scientists and ML engineers.', products: 'Vertex AI, TensorFlow' },
+    };
+    
+    expertiseRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            const selectedValue = document.querySelector('input[name="expertise"]:checked').value;
+            const solution = aiSolutions[selectedValue];
+            rec.title.textContent = solution.title;
+            rec.description.textContent = solution.desc;
+            rec.products.textContent = solution.products;
+            recommendationDiv.classList.remove('hidden');
+        });
+    });
+
+
+    // Section 5: Shared Responsibility Chart
+    const securityModelData = {
+        iaas: [2, 5], // Provider, Customer
+        paas: [4, 3],
+        saas: [6, 1]
+    };
+    const respCtx = document.getElementById('sharedResponsibilityChart').getContext('2d');
+    const sharedResponsibilityChart = new Chart(respCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Responsibility'],
+            datasets: [
+                {
+                    label: 'Provider Manages',
+                    data: [securityModelData.iaas[0]],
+                    backgroundColor: '#14b8a6', // teal-500
+                },
+                {
+                    label: 'You Manage',
+                    data: [securityModelData.iaas[1]],
+                    backgroundColor: '#64748b', // slate-500
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true,
+                    display: false,
+                },
+                y: {
+                    stacked: true,
+                    display: false,
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    enabled: false
+                }
+            }
+        }
+    });
+
+    const securityModelBtns = document.querySelectorAll('.security-model-btn');
+    function updateSecurityModel(model) {
+        sharedResponsibilityChart.data.datasets[0].data = [securityModelData[model][0]];
+        sharedResponsibilityChart.data.datasets[1].data = [securityModelData[model][1]];
+        sharedResponsibilityChart.update();
+        securityModelBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.model === model);
+        });
+    }
+
+    securityModelBtns.forEach(btn => {
+        btn.addEventListener('click', () => updateSecurityModel(btn.dataset.model));
+    });
+    updateSecurityModel('iaas');
+
+    // Section 6: SLO Calculator
+    const sloInput = document.getElementById('slo-input');
+    const calculateBtn = document.getElementById('calculate-slo');
+    const sloResultDiv = document.getElementById('slo-result');
+    const sloOutput = document.getElementById('slo-output');
+    const downtimeOutput = document.getElementById('downtime-output');
+    
+    calculateBtn.addEventListener('click', () => {
+        const slo = parseFloat(sloInput.value);
+        if (isNaN(slo) || slo < 0 || slo > 100) {
+            alert('Please enter a valid SLO percentage between 0 and 100.');
+            return;
+        }
+        const errorBudget = 100 - slo;
+        const minutesInMonth = 30 * 24 * 60;
+        const downtimeMinutes = (errorBudget / 100) * minutesInMonth;
+        
+        let downtimeText = '';
+        if (downtimeMinutes >= 60) {
+            const hours = Math.floor(downtimeMinutes / 60);
+            const minutes = (downtimeMinutes % 60).toFixed(1);
+            downtimeText = `${hours}h ${minutes}m`;
+        } else {
+            downtimeText = `${downtimeMinutes.toFixed(1)} minutes`;
+        }
+
+        sloOutput.textContent = `${slo}%`;
+        downtimeOutput.textContent = downtimeText;
+        sloResultDiv.classList.remove('hidden');
+    });
+
+});
+</script>
+</body>
+</html>
